@@ -50,12 +50,11 @@ class DatabaseSeeder {
     }
 }
 
-// forma  ako ide bulk
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $seeder = new DatabaseSeeder();
 
     if (isset($_POST['bulk_insert'])) {
-        // Bull metoda 
+        // Bulk insert
         $data = [];
         for ($i = 1; $i <= 100; $i++) {
             $data[] = [
@@ -70,32 +69,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $seeder->seedData($data);
     } else {
-        // pojedinacan unos
+        // Single insert
         $item = [
             'kategorija' => $_POST['kategorija'],
             'cena' => $_POST['cena'],
             'naziv' => $_POST['naziv'],
             'opis' => $_POST['opis'],
-            'slika' => '', // ovde moze da se ubaci  putanja do slika 
+            'slika' => '', // will be set after upload
             'istaknuto' => $_POST['istaknuto'],
             'brisan' => $_POST['brisan']
         ];
 
-        // unos slika
+        // Image upload handling
         if (isset($_FILES['slika']) && $_FILES['slika']['error'] == UPLOAD_ERR_OK) {
-            $uploadsDir = 'uploads/'; // direktorijum odakle  se vrsi upload
+            $uploadsDir = 'uploads/'; // directory for uploads
+
+            // Ensure the uploads directory exists
+            if (!is_dir($uploadsDir)) {
+                mkdir($uploadsDir, 0777, true); // create directory if it doesn't exist
+            }
+
             $tmpName = $_FILES['slika']['tmp_name'];
             $fileName = basename($_FILES['slika']['name']);
             $filePath = $uploadsDir . $fileName;
 
-            // umetanje slika u zeljeni direktorijum ako se radi vanila bez baze 
+            // Move the uploaded file to the desired directory
             if (move_uploaded_file($tmpName, $filePath)) {
-                $item['slika'] = $filePath;
+                $item['slika'] = $filePath; // store the file path in the item
             } else {
-                echo "Unos neuspesan.";
+                echo "Unos neuspesan. Greska prilikom premestanja slike.";
+                $item['slika'] = null; // set to null if upload failed
             }
         } else {
-            echo "Nije uneta slika ili tokom umetanja se desila  greska ";
+            echo "Nije uneta slika ili tokom umetanja se desila greska.";
         }
 
         $seeder->insertSingle($item);
@@ -137,7 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <option value="0">Ne</option>
         </select><br>
 
-        <label for="brisan"Obrisano>:</label>
+        <label for="brisan">Obrisano:</label>
         <select id="brisan" name="brisan">
             <option value="1">Da</option>
             <option value="0">Ne</option>
@@ -147,7 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </form>
 
     <form action="" method="POST">
-        <h2>Bulk ubacivanje do 100 itema/h2>
+        <h2>Bulk ubacivanje do 100 itema</h2>
         <button type="submit" name="bulk_insert">Ubaci Bulk Data</button>
     </form>
 </body>
